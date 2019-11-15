@@ -1,1 +1,1 @@
-pipelinewise-target-snowflake==1.1.6
+-e git://github.com/andyoneal/pipelinewise-target-snowflake.git#egg=pipelinewise-target-snowflake

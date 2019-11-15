@@ -92,8 +92,10 @@ def sync_table(table):
         # Exporting table data, get table definitions and close connection to avoid timeouts
         postgres.copy_table(table, filepath)
         snowflake_types = postgres.map_column_types_to_target(table)
-        snowflake_columns = snowflake_types.get("columns", [])
+        snowflake_columns = [w.replace('.','').replace(':','_').replace('_sdc_','_orig_sdc_') for w in snowflake_types.get("columns", [])]
         primary_key = snowflake_types.get("primary_key")
+        if primary_key:
+            primary_key = primary_key.replace('.','').replace(':','_').replace('_sdc_','_orig_sdc_')
         postgres.close_connection()
 
         # Uploading to S3

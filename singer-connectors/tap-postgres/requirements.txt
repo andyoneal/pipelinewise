@@ -1,1 +1,1 @@
-pipelinewise-tap-postgres==1.2.1
+-e git://github.com/andyoneal/pipelinewise-tap-postgres.git#egg=pipelinewise-tap-postgres

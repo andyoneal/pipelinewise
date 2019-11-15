@@ -142,7 +142,7 @@ class FastSyncTapPostgres:
 
 
     def fetch_current_incremental_key_pos(self, table, replication_key):
-        result = self.query("SELECT MAX({}) AS key_value FROM {}".format(replication_key, table))
+        result = self.query("SELECT MAX(\"{}\") AS key_value FROM {}".format(replication_key, "\"" + table.replace(".","\".\"") + "\""))
         if len(result) == 0:
             raise Exception("Cannot get replication key value for table: {}".format(table))
         else:
@@ -175,7 +175,7 @@ class FastSyncTapPostgres:
                         pg_class.relnamespace = pg_namespace.oid AND
                         pg_attribute.attrelid = pg_class.oid AND
                         pg_attribute.attnum = any(pg_index.indkey)
-                    AND indisprimary""".format(table)
+                    AND indisprimary""".format("\"" + table.replace(".","\".\"") + "\"")
         pk = self.query(sql)
         if len(pk) > 0:
             return pk[0][0]
@@ -194,10 +194,10 @@ class FastSyncTapPostgres:
                 column_name,
                 data_type,
                 CASE
-                    WHEN data_type = 'ARRAY' THEN 'array_to_json(' || column_name || ') AS ' || column_name
-                    WHEN udt_name = 'time' THEN 'replace(' || column_name || E'::varchar,\\\'24:00:00\\\',\\\'00:00:00\\\') AS ' || column_name
-                    WHEN udt_name = 'timetz' THEN 'replace((' || column_name || E' at time zone \'\'UTC\'\')::time::varchar,\\\'24:00:00\\\',\\\'00:00:00\\\') AS ' || column_name
-                    ELSE column_name
+                    WHEN data_type = 'ARRAY' THEN 'array_to_json("' || column_name || '") AS "' || column_name || '"'
+                    WHEN udt_name = 'time' THEN 'replace("' || column_name || E'"::varchar,\\\'24:00:00\\\',\\\'00:00:00\\\') AS "' || column_name || '"'
+                    WHEN udt_name = 'timetz' THEN 'replace(("' || column_name || E'" at time zone \'\'UTC\'\')::time::varchar,\\\'24:00:00\\\',\\\'00:00:00\\\') AS "' || column_name || '"'
+                    ELSE '"' || column_name || '"'
                 END AS safe_sql_value
                 FROM information_schema.columns
                 WHERE table_schema = '{}'
@@ -231,7 +231,7 @@ class FastSyncTapPostgres:
         ,now() AT TIME ZONE 'UTC'
         ,null
         FROM {}) TO STDOUT with CSV DELIMITER ','
-        """.format(','.join(column_safe_sql_values), table_name)
+        """.format(','.join(column_safe_sql_values), "\"" + table_name.replace(".","\".\"") + "\"")
         utils.log("POSTGRES - Exporting data: {}".format(sql))
         with gzip.open(path, 'wt') as gzfile:
             self.curr.copy_expert(sql, gzfile, size=131072)
